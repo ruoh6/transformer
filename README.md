@@ -1,2 +1,2 @@
-# tramsformer
-Tiny tramsformer
+# transformer
+Tiny transformer

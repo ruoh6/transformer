@@ -1,0 +1,10 @@
+find_package(GTest REQUIRED)
+include(GoogleTest)
+
+file(GLOB TEST_SOURCES CONFIGURE_DEPENDS "*.cc" "*.cpp" "*.cxx")
+foreach(source IN LISTS TEST_SOURCES)
+    get_filename_component(name "${source}" NAME_WE)
+    add_executable(${name} "${source}")
+    target_link_libraries(${name} PRIVATE transformer::transformer GTest::gtest_main)
+    gtest_discover_tests(${name})
+endforeach()
