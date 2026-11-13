@@ -10,9 +10,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(Eigen3 REQUIRED NO_MODULE)
 
 add_subdirectory(src)
-add_subdirectory(example)
+add_subdirectory(examples)
 
 include(CTest)
 if(BUILD_TESTING)
-    add_subdirectory(test)
+  add_subdirectory(test)
 endif()

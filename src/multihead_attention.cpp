@@ -2,12 +2,12 @@
 #include <cmath>
 
 // scaled dot product attention
-Eigen::MatrixXf scaled_dot_product_attention(const Eigen::MatrixXf &Q,
-                                             const Eigen::MatrixXf &K,
-                                             const Eigen ::MatrixXf &V) {
-    auto attn_score = Q * K.transpose() / std::sqrt(V.cols());
+Eigen::MatrixXf attention(const Eigen::MatrixXf &Q,
+                          const Eigen::MatrixXf &K,
+                          const Eigen::MatrixXf &V) {
+    Eigen::MatrixXf attn_score = Q * K.transpose() / std::sqrt(Q.cols());
 
-    auto softmax = [](const Eigen::MatrixXf &mat) {
+    auto softmax = [](const Eigen::MatrixXf &mat) -> Eigen::MatrixXf {
         Eigen::MatrixXf row_max = mat.rowwise().maxCoeff();
         Eigen::MatrixXf max_broadcast = row_max.replicate(1, mat.cols());
 
@@ -20,7 +20,7 @@ Eigen::MatrixXf scaled_dot_product_attention(const Eigen::MatrixXf &Q,
         return exp_mat.array() / sum_broadcast.array();
     };
 
-    return softmax(attn_score);
+    return softmax(attn_score) * V;
 }
 
 MultiHeadAttention::MultiHeadAttention(int num_heads, int d_model) {
@@ -28,10 +28,10 @@ MultiHeadAttention::MultiHeadAttention(int num_heads, int d_model) {
     this->d_model = d_model;
     this->d_k = d_model / num_heads;
 
-    Wq_(Eigen::MatrixXf::Random(d_model, d_model));
-    Wk_(Eigen::MatrixXf::Random(d_model, d_model));
-    Wv_(Eigen::MatrixXf::Random(d_model, d_model));
-    Wo_(Eigen::MatrixXf::Random(d_model, d_model));
+    Wq_ = Eigen::MatrixXf::Random(d_model, d_model);
+    Wk_ = Eigen::MatrixXf::Random(d_model, d_model);
+    Wv_ = Eigen::MatrixXf::Random(d_model, d_model);
+    Wo_ = Eigen::MatrixXf::Random(d_model, d_model);
 }
 
 Eigen::MatrixXf MultiHeadAttention::forward(const Eigen::MatrixXf &X) {
@@ -42,7 +42,7 @@ Eigen::MatrixXf MultiHeadAttention::forward(const Eigen::MatrixXf &X) {
     Eigen::MatrixXf V = X * Wv_;
 
     // concat matrix
-    Eigen::MatrixXf concat_mat;
+    Eigen::MatrixXf concat_mat(X.rows(), d_model);
 
     // multihead attention
     for (int h = 0; h < num_heads; h++) {
@@ -53,7 +53,7 @@ Eigen::MatrixXf MultiHeadAttention::forward(const Eigen::MatrixXf &X) {
 
         // self attention
         Eigen::MatrixXf head = attention(Qh, Kh, Vh);
-        concat_mat.middleCols(h * d_k, head);
+        concat_mat.middleCols(h * d_k, d_k) = head;
     }
 
     return concat_mat * Wo_;
